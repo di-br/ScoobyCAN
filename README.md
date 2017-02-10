@@ -2,6 +2,9 @@
 Absolutely everything is work-in-progress and will work for me and me alone.
 You're on your own and have been warned.
 
+**originally based on a fork from [fabiobaltieri/toyothack](https://github.com/fabiobaltieri/toyothack)**  
+Since his repository does not seem to be active and I do not assume a merge would be desirable, I started a new repository. It is, however, worthwhile visiting his [blog entry](https://fabiobaltieri.com/2013/07/23/hacking-into-a-vehicle-can-bus-toyothack-and-socketcan/).
+
 # ScoobyCAN
 A 'tool' to convert CAN frames of a Subaru into human readable form with an ncurses interface.
 
@@ -11,4 +14,4 @@ The interfaced used is [USBtin](http://www.fischl.de/usbtin/), along with Socket
 
 ## Current status
 Well, it kind a works. Still needs extending. It looks like this:
-![screenshot](https://github.com/di-br/toyothack/blob/master/examples/screenshot.png "screenshot")
+![screenshot](https://github.com/di-br/ScoobyCAN/blob/master/examples/screenshot.png "screenshot")

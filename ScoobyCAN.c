@@ -1,6 +1,6 @@
 /*
- * Copyright 2013 Fabio Baltieri <fabio.baltieri@gmail.com>
- *
+ * Original work copyright 2013 Fabio Baltieri <fabio.baltieri@gmail.com>
+ * Modified work copyright 2015-2017 di-br
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
