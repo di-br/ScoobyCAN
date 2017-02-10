@@ -107,6 +107,9 @@ enum float_data {
    SPEED_F_R,       // col 12
    SPEED_R_L,       // col 13
    SPEED_R_R,       // col 14
+   TRANS_TORQ,      // col 15
+   ENGINE_TORQ,     // col 16
+   TORQ_LOSS,       // col 17
    FLOAT_COUNT
 };
 float float_mem[FLOAT_COUNT];
@@ -325,6 +328,9 @@ static void process_one(struct can_frame *frm)
 	case SUB_ECU_410:
 		int_mem[RPM] = (int32_t) msg->ecu_410.rpm;
 		float_mem[ACCEL] = (float) msg->ecu_410.accel*100./255.;
+		float_mem[TRANS_TORQ] = (float) msg->ecu_410.transtorq * 1.6;
+		float_mem[ENGINE_TORQ] = (float) msg->ecu_410.engtorq * 1.6;
+		float_mem[TORQ_LOSS] = (float) msg->ecu_410.torqloss * 1.6;
 #ifdef NCURS
 		mvprintw(ENGINE_LINE, RPM_COL, "%5d rpm",
 		      int_mem[RPM]);
