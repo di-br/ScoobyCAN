@@ -40,8 +40,13 @@ int main(int argc, char **argv);
 // set up a fudge factor to guess better fuelconsumption
 #define FUELFUDGE 64.
 
+// define steering wheel angle after which we ignore TPM guess
+//#define TPM_STEER_LIMIT 5
+// define number of times we need to trigger TPM guess before we print warning
+//#define TPM_COUNT_LIMIT 500
+
 // minimal size for ncurses window
-#define LINES 25
+#define LINES 35
 #define WIDTH 90
 // where we put what, coordinates for ncurses window
 #define STEER_LINE 2
@@ -49,13 +54,16 @@ int main(int argc, char **argv);
 #define IND_SPEED_LINE 7
 #define TEMP_LINE 11
 #define FUEL_LINE 13
-#define ENGINE_LINE 14
+#define ENGINE_LINE 15
+#define TORQUE_LINE 16
+#define ACCEL_LINE 19
+#define MINMAX_LINE 22
 #define SWITCHES_LINE -4
 #define LEFT_WHL 25
 #define MID_WHL 42
 #define RIGHT_WHL 59
 #define STEER_COL 52
-#define COOL_COL 50
+#define COOL_COL 59
 #define RPM_COL 22
 #define ACCEL_COL 50
 // COLORS
@@ -139,17 +147,23 @@ union u_frames {
    } steering_sensor;
    struct __packed { // 0x070
       uint16_t yaw_rate;
+      //
       uint8_t byte2;
       uint8_t byte3;
       uint16_t y_accel;
+      //
+      	//uint16_t counter;
       uint8_t byte6;
       uint8_t byte7;
    } vcds_y;
    struct __packed { // 0x080
       uint16_t yaw_accel;
+      //
       uint8_t byte2;
       uint8_t byte3;
       uint16_t x_accel;
+      //
+     	 //uint16_t counter;
       uint8_t byte6;
       uint8_t byte7;
    } vcds_x;
@@ -160,11 +174,13 @@ union u_frames {
       uint8_t torqloss;
       uint8_t accel;
       uint16_t rpm;
+      //
       uint8_t byte7;
    } ecu_410;
    struct __packed { // 0x411
       uint8_t byte0;
       uint16_t le;
+      //
       uint8_t byte3;
       uint8_t gear;
       uint8_t cruisespeed;
@@ -183,6 +199,7 @@ union u_frames {
    } vcds_torq;
    struct __packed { // 0x511
       int16_t angle;
+      //
       uint8_t byte2;
       uint8_t byte3;
       uint8_t byte4;
@@ -197,17 +214,23 @@ union u_frames {
       uint8_t byte5;
       uint8_t counter;
       uint16_t fcode;
+      //
    } vcds_speed;
    struct __packed { // 0x513
       int16_t frle;
+      //
       int16_t frri;
+      //
       int16_t rele;
+      //
       int16_t reri;
+      //
    } vcds_speeds;
    struct __packed { // 0x514
       uint8_t byte0;
       uint8_t byte1;
       int16_t temp;
+      //
       uint8_t leftlever;
       uint8_t fuel;
       uint8_t counter;
@@ -215,6 +238,7 @@ union u_frames {
    struct __packed { // 0x600
       uint8_t dpf_bits;
       uint16_t fuel;
+      //
       uint8_t coolant;
       uint8_t counter;
       uint8_t byte5;
@@ -294,34 +318,45 @@ static void process_one(struct can_frame *frm)
         case SUB_VCDS_Y:
 		float_mem[A_Y] = (float) msg->vcds_y.y_accel*0.00012742 - 4.1768;
 #ifdef NCURS
-		mvprintw(18, 1, "yaw rate  %7.3f deg/s     y_accel %7.3f g",
+		mvprintw(ACCEL_LINE, RPM_COL, "yaw rate  %7.3f deg/s     y_accel %7.3f g",
 		      (msg->vcds_y.yaw_rate*0.005 - 163.84),
 		      float_mem[A_Y]);
+                // hypothesis
+		mvprintw(ACCEL_LINE, col-13, "%5d",
+		      ( msg->vcds_y.byte6));
+		      //((int32_t) msg->vcds_y.counter));
+		mvprintw(ACCEL_LINE, col-5, "%5d",
+		      ( msg->vcds_y.byte7));
 
 		if (float_mem[A_Y] < minay)
 		   minay = float_mem[A_Y];
 		if (float_mem[A_Y] > maxay)
 		   maxay = float_mem[A_Y];
-		mvprintw(FUEL_LINE+9, RPM_COL+21, "rig %7.4f y_accel",
+		mvprintw(MINMAX_LINE+1, RPM_COL+21, "rig %7.4f y_accel",
 		                maxay);
-		mvprintw(FUEL_LINE+8, RPM_COL+21, "lef %7.4f y_accel",
+		mvprintw(MINMAX_LINE, RPM_COL+21, "lef %7.4f y_accel",
 		                minay);
 #endif
 		break;
         case SUB_VCDS_X:
 		float_mem[A_X] = (float) msg->vcds_x.x_accel*0.00012742 - 4.1768;
 #ifdef NCURS
-		mvprintw(19, 1, "yaw accel %7.3f deg/s^2   x_accel %7.3f g",
+		mvprintw(ACCEL_LINE+1, RPM_COL, "yaw accel %7.3f deg/s^2   x_accel %7.3f g",
 		      (msg->vcds_x.yaw_accel*0.125 - 4096),
 		      float_mem[A_X]);
+		mvprintw(ACCEL_LINE+1, col-13, "%5d",
+		      ( msg->vcds_x.byte6));
+		      //((int32_t) msg->vcds_x.counter));
+		mvprintw(ACCEL_LINE+1, col-5, "%5d",
+		      ( msg->vcds_x.byte7));
 
 		if (float_mem[A_X] < minax)
 		   minax = float_mem[A_X];
 		if (float_mem[A_X] > maxax)
 		   maxax = float_mem[A_X];
-		mvprintw(FUEL_LINE+9, RPM_COL+45, "dec %7.4f x_accel",
+		mvprintw(MINMAX_LINE+1, RPM_COL+45, "dec %7.4f x_accel",
 		                maxax);
-		mvprintw(FUEL_LINE+8, RPM_COL+45, "acc %7.4f x_accel",
+		mvprintw(MINMAX_LINE, RPM_COL+45, "acc %7.4f x_accel",
 		                minax);
 #endif
 		break;
@@ -336,7 +371,7 @@ static void process_one(struct can_frame *frm)
 		      int_mem[RPM]);
 		mvprintw(ENGINE_LINE, ACCEL_COL, "%6.2f %",
 		      float_mem[ACCEL]);
-		mvprintw(ENGINE_LINE+1, RPM_COL, "%5.1f Nm %5.1f Nm %5.1f Nm   %5.1f",
+		mvprintw(TORQUE_LINE+1, RPM_COL, "%5.1f Nm %5.1f Nm %5.1f Nm   %5.1f",
 		      msg->ecu_410.transtorq * 1.6,
 		      msg->ecu_410.engtorq * 1.6,
 		      msg->ecu_410.torqloss * 1.6,
@@ -405,7 +440,7 @@ static void process_one(struct can_frame *frm)
 		mvprintw(IND_SPEED_LINE+2, MID_WHL, "%5.2f",
 		                ((float_mem[SPEED_R_R]-float_mem[SPEED_R_L]) * 0.05625));
 
-		// not check tire preassures
+		// now check tire preassures
 		tpm_check(tpm_flag);
 
 #endif
@@ -458,17 +493,17 @@ static void process_one(struct can_frame *frm)
 #ifdef NCURS
 		mvprintw(FUEL_LINE, RPM_COL, "%5.2f mm3/s",
 		                (int_mem[FUEL]/FUELFUDGE));
-		mvprintw(FUEL_LINE+9, RPM_COL, "max %5.2f mm3/s",
+		mvprintw(MINMAX_LINE+1, RPM_COL, "max %5.2f mm3/s",
 		                maxf);
-		mvprintw(FUEL_LINE+8, RPM_COL, "min %5.2f mm3/s",
+		mvprintw(MINMAX_LINE, RPM_COL, "min %5.2f mm3/s",
 		                minf);
 		attron(COLOR_PAIR(HIL));
-		mvprintw(FUEL_LINE+1, 2, "%6.1f l/1oo km",
+		mvprintw(FUEL_LINE, RPM_COL+25, "%6.1f l/1oo km",
 		                lph);
-		mvprintw(FUEL_LINE+2, 2, "%6.1f l/h",
+		mvprintw(FUEL_LINE, RPM_COL+12, "%6.1f l/h",
 		                lphr);
 		attroff(COLOR_PAIR(HIL));
-		mvprintw(FUEL_LINE, COOL_COL, "%5d degC",
+		mvprintw(TEMP_LINE, COOL_COL, "%5d degC",
 		                (msg->ecu_600.coolant)-40);
 		mvprintw(FUEL_LINE, col-5, "%5d",
 		                (msg->ecu_600.counter));
@@ -586,11 +621,14 @@ static int paint_empty_scr(void)
    mvprintw(TEMP_LINE, 1, "ambient temperature:      degC");
    mvprintw(TEMP_LINE, col-5-7, "msg cnt");
    mvprintw(FUEL_LINE, 1, "fuel consumption:");
-   mvprintw(FUEL_LINE, COOL_COL-13, "coolant temp:");
+   mvprintw(TEMP_LINE, COOL_COL-20, "coolant temperature:");
    mvprintw(FUEL_LINE, col-5-7, "msg cnt");
-   mvprintw(ENGINE_LINE, ACCEL_COL-12, "accel ped:");
-   mvprintw(ENGINE_LINE+2, 1, "Torques");
-   mvprintw(ENGINE_LINE+2, RPM_COL, "  Transm   Engine     Loss");
+   mvprintw(ENGINE_LINE, 1, "engine:");
+   mvprintw(ENGINE_LINE, ACCEL_COL-11, "accel ped:");
+   mvprintw(TORQUE_LINE, 1, "torques:");
+   mvprintw(TORQUE_LINE, RPM_COL, "  transm   engine     loss");
+   mvprintw(ACCEL_LINE, 1, "acceleration data:");
+   mvprintw(MINMAX_LINE, 1, "extrema:");
 
    refresh;
    return 0;
@@ -609,7 +647,7 @@ static int tpm_check(int *tpm_flag)
    float diff[POS_COUNT], avg[POS_COUNT], rel[POS_COUNT];
    int angle = int_mem[STEER_ANGLE]*int_mem[STEER_ANGLE];
 
-   // are we cornering?
+   // are we cornering, if so ignore TPM guess?
    if (angle > TPM_STEER_LIMIT*TPM_STEER_LIMIT)
       return 0;
 
