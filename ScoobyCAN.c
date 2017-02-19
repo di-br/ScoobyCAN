@@ -28,7 +28,7 @@ static void unknown_frame(int);
 static void process_one(struct can_frame *frm);
 static int ncurses_init(void);
 static int paint_empty_scr(void);
-static int tpm_check(int *tpm_flag);
+static int tpms_check(int *tpms_flag);
 static int mem_init(void);
 static int net_init(char *ifname);
 static void receive_one(void);
@@ -40,10 +40,10 @@ int main(int argc, char **argv);
 // set up a fudge factor to guess better fuelconsumption
 #define FUELFUDGE 64.
 
-// define steering wheel angle after which we ignore TPM guess
-//#define TPM_STEER_LIMIT 5
-// define number of times we need to trigger TPM guess before we print warning
-//#define TPM_COUNT_LIMIT 500
+// define steering wheel angle after which we ignore TPMS guess
+//#define TPMS_STEER_LIMIT 5
+// define number of times we need to trigger TPMS guess before we print warning
+//#define TPMS_COUNT_LIMIT 500
 
 // minimal size for ncurses window
 #define LINES 35
@@ -77,7 +77,7 @@ static int unknown[UNKNOWN_COUNT];
 
 int row, col; // global size of our window
 int display;  // this controlls how often we update the screen or output data
-int tpm_flag[4]; // this will hold data on TPM module
+int tpms_flag[4]; // this will hold data on TPMS module
 
 // ENUM the frame IDs we know are present or know how to interpret
 enum frame_ids {
@@ -441,7 +441,7 @@ static void process_one(struct can_frame *frm)
 		                ((float_mem[SPEED_R_R]-float_mem[SPEED_R_L]) * 0.05625));
 
 		// now check tire preassures
-		tpm_check(tpm_flag);
+		tpms_check(tpms_flag);
 
 #endif
 		break;
@@ -634,8 +634,8 @@ static int paint_empty_scr(void)
    return 0;
 }
 
-// TPM - tire pressure module :-)
-static int tpm_check(int *tpm_flag)
+// TPMS - tire pressure monitoring system :-)
+static int tpms_check(int *tpms_flag)
 {
    enum pos {
       FRONT_WHLS,
@@ -647,8 +647,8 @@ static int tpm_check(int *tpm_flag)
    float diff[POS_COUNT], avg[POS_COUNT], rel[POS_COUNT];
    int angle = int_mem[STEER_ANGLE]*int_mem[STEER_ANGLE];
 
-   // are we cornering, if so ignore TPM guess?
-   if (angle > TPM_STEER_LIMIT*TPM_STEER_LIMIT)
+   // are we cornering, if so ignore TPMS guess?
+   if (angle > TPMS_STEER_LIMIT*TPMS_STEER_LIMIT)
       return 0;
 
    // start by checking all wheel speeds against each other
@@ -668,83 +668,83 @@ static int tpm_check(int *tpm_flag)
    rel[RIGHT_WHLS] = diff[RIGHT_WHLS] / avg[RIGHT_WHLS];
 
    // clear text - in case there is one
-   mvprintw(row+SWITCHES_LINE-4, 10, "                                    %5d ",tpm_flag[0]);
-   mvprintw(row+SWITCHES_LINE-3, 10, "                                    %5d ",tpm_flag[1]);
-   mvprintw(row+SWITCHES_LINE-2, 10, "                                    %5d ",tpm_flag[2]);
-   mvprintw(row+SWITCHES_LINE-1, 10, "                                    %5d ",tpm_flag[3]);
+   mvprintw(row+SWITCHES_LINE-4, 10, "                                    %5d ",tpms_flag[0]);
+   mvprintw(row+SWITCHES_LINE-3, 10, "                                    %5d ",tpms_flag[1]);
+   mvprintw(row+SWITCHES_LINE-2, 10, "                                    %5d ",tpms_flag[2]);
+   mvprintw(row+SWITCHES_LINE-1, 10, "                                    %5d ",tpms_flag[3]);
 
    // identify fast one (this requires two above limit)
    // front left
    if ( rel[FRONT_WHLS] > 0.02 && rel[LEFT_WHLS] > 0.02 ) 
-      tpm_flag[0]+=1; // it's faster
+      tpms_flag[0]+=1; // it's faster
    else
-      if (tpm_flag[0] < TPM_COUNT_LIMIT)  // we still think everything is ok, so reduce warn level
-	 tpm_flag[0]-=1;
+      if (tpms_flag[0] < TPMS_COUNT_LIMIT)  // we still think everything is ok, so reduce warn level
+	 tpms_flag[0]-=1;
       else
-	 if (tpm_flag[0] < 10*TPM_COUNT_LIMIT)  // we have issued warning, so stay alert for longer
-	    tpm_flag[0]-=1;
-   if (tpm_flag[0] > TPM_COUNT_LIMIT)
+	 if (tpms_flag[0] < 10*TPMS_COUNT_LIMIT)  // we have issued warning, so stay alert for longer
+	    tpms_flag[0]-=1;
+   if (tpms_flag[0] > TPMS_COUNT_LIMIT)
    {
       attron(A_BOLD | COLOR_PAIR(WARN) | A_REVERSE);
       mvprintw(row+SWITCHES_LINE-4, 10, "CHECK PREASSURE OF FRONT LEFT WHEEL!");
       attroff(A_BOLD | COLOR_PAIR(WARN) | A_REVERSE);
    }
-   if (tpm_flag[0] < 0)
-      tpm_flag[0] = 0;
+   if (tpms_flag[0] < 0)
+      tpms_flag[0] = 0;
 
    // front right
    if ( rel[FRONT_WHLS] < -0.02 && rel[RIGHT_WHLS] > 0.02 ) 
-      tpm_flag[1]+=1; // it's faster
+      tpms_flag[1]+=1; // it's faster
    else
-      if (tpm_flag[1] < TPM_COUNT_LIMIT)  // we still think everything is ok, so reduce warn level
-	 tpm_flag[1]-=1;
+      if (tpms_flag[1] < TPMS_COUNT_LIMIT)  // we still think everything is ok, so reduce warn level
+	 tpms_flag[1]-=1;
       else
-	 if (tpm_flag[1] < 10*TPM_COUNT_LIMIT)  // we have issued warning, so stay alert for longer
-	    tpm_flag[1]-=1;
-   if (tpm_flag[1] > TPM_COUNT_LIMIT)
+	 if (tpms_flag[1] < 10*TPMS_COUNT_LIMIT)  // we have issued warning, so stay alert for longer
+	    tpms_flag[1]-=1;
+   if (tpms_flag[1] > TPMS_COUNT_LIMIT)
    {
       attron(A_BOLD | COLOR_PAIR(WARN) | A_REVERSE);
       mvprintw(row+SWITCHES_LINE-3, 10, "CHECK PREASSURE OF FRONT RIGHT WHEEL!");
       attroff(A_BOLD | COLOR_PAIR(WARN) | A_REVERSE);
    }
-   if (tpm_flag[1] < 0)
-      tpm_flag[1] = 0;
+   if (tpms_flag[1] < 0)
+      tpms_flag[1] = 0;
 
    // rear left
    if ( rel[REAR_WHLS] > 0.02 && rel[LEFT_WHLS] < -0.02 ) 
-      tpm_flag[2]+=1; // it's faster
+      tpms_flag[2]+=1; // it's faster
    else
-      if (tpm_flag[2] < TPM_COUNT_LIMIT)  // we still think everything is ok, so reduce warn level
-	 tpm_flag[2]-=1;
+      if (tpms_flag[2] < TPMS_COUNT_LIMIT)  // we still think everything is ok, so reduce warn level
+	 tpms_flag[2]-=1;
       else
-	 if (tpm_flag[2] < 10*TPM_COUNT_LIMIT)  // we have issued warning, so stay alert for longer
-	    tpm_flag[2]-=1;
-   if (tpm_flag[2] > TPM_COUNT_LIMIT)
+	 if (tpms_flag[2] < 10*TPMS_COUNT_LIMIT)  // we have issued warning, so stay alert for longer
+	    tpms_flag[2]-=1;
+   if (tpms_flag[2] > TPMS_COUNT_LIMIT)
    {
       attron(A_BOLD | COLOR_PAIR(WARN) | A_REVERSE);
       mvprintw(row+SWITCHES_LINE-2, 10, "CHECK PREASSURE OF REAR LEFT WHEEL!");
       attroff(A_BOLD | COLOR_PAIR(WARN) | A_REVERSE);
    }
-   if (tpm_flag[2] < 0)
-      tpm_flag[2] = 0;
+   if (tpms_flag[2] < 0)
+      tpms_flag[2] = 0;
 
    // rear right
    if ( rel[REAR_WHLS] < -0.02 && rel[LEFT_WHLS] < -0.02 ) 
-      tpm_flag[3]+=1; // it's faster
+      tpms_flag[3]+=1; // it's faster
    else
-      if (tpm_flag[3] < TPM_COUNT_LIMIT)  // we still think everything is ok, so reduce warn level
-	 tpm_flag[3]-=1;
+      if (tpms_flag[3] < TPMS_COUNT_LIMIT)  // we still think everything is ok, so reduce warn level
+	 tpms_flag[3]-=1;
       else
-	 if (tpm_flag[3] < 10*TPM_COUNT_LIMIT)  // we have issued warning, so stay alert for longer
-	    tpm_flag[3]-=1;
-   if (tpm_flag[3] > TPM_COUNT_LIMIT)
+	 if (tpms_flag[3] < 10*TPMS_COUNT_LIMIT)  // we have issued warning, so stay alert for longer
+	    tpms_flag[3]-=1;
+   if (tpms_flag[3] > TPMS_COUNT_LIMIT)
    {
       attron(A_BOLD | COLOR_PAIR(WARN) | A_REVERSE);
       mvprintw(row+SWITCHES_LINE-1, 10, "CHECK PREASSURE OF REAR RIGHT WHEEL!");
       attroff(A_BOLD | COLOR_PAIR(WARN) | A_REVERSE);
    }
-   if (tpm_flag[3] < 0)
-      tpm_flag[3] = 0;
+   if (tpms_flag[3] < 0)
+      tpms_flag[3] = 0;
 
    return 0;
 }
@@ -761,10 +761,10 @@ static int mem_init(void)
    maxay = 0.0;
    minay = 1000000.0;
    display = 0;
-   tpm_flag[0] = 0;
-   tpm_flag[1] = 0;
-   tpm_flag[2] = 0;
-   tpm_flag[3] = 0;
+   tpms_flag[0] = 0;
+   tpms_flag[1] = 0;
+   tpms_flag[2] = 0;
+   tpms_flag[3] = 0;
 
    // init switches
    switches[BREAK_SW] = 1;
