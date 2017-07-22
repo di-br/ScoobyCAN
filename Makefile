@@ -1,6 +1,6 @@
 CFLAGS  += -Wall -O3
-CFLAGS  += `ncurses5-config --cflags`
-LDFLAGS += `ncurses5-config --libs`
+CFLAGS  += `pkg-config --cflags ncurses`
+LDFLAGS += `pkg-config --libs ncurses`
 
 all: ScoobyCAN ScoobyCAN_dump tags
 
