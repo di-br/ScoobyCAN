@@ -11,7 +11,7 @@ A 'tool' to convert CAN frames of a Subaru into human readable form with an ncur
 ### General idea
 Starting from the [original repository](https://github.com/fabiobaltieri/toyothack) as inspiration and code skeleton, this is my attempt to look at CAN data while sniffing the CAN bus.
 
-The interface used is [USBtin](http://www.fischl.de/usbtin/), along with SocketCAN and the lot. Recording/replaying data is easy and fun. Ultimately I want to play with the available data and see what I can make of it (like implementing a TPS-light). The CAN bus will only be read, no injecting of data.
+The interface used is [USBtin](http://www.fischl.de/usbtin/), along with SocketCAN and the lot. Recording/replaying data is easy and fun. Ultimately I want to play with the available data and see what I can make of it (like implementing a TPMS-light). The CAN bus will only be read, no injecting of data.
 
 The information about the content of the CAN frames is taken from the [Subaru Diesel Crew](https://subdiesel.wordpress.com/).
 
